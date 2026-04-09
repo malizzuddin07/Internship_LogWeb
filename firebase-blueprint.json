@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the system (admin or student)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique ID of the user" },
+        "email": { "type": "string", "format": "email", "description": "The user's email address" },
+        "password": { "type": "string", "description": "The hashed password" },
+        "name": { "type": "string", "description": "The user's full name" },
+        "role": { "type": "string", "enum": ["admin", "student"], "description": "The user's role" },
+        "department": { "type": "string", "description": "The user's department (for students)" },
+        "created_at": { "type": "string", "format": "date-time", "description": "When the user was created" }
+      },
+      "required": ["email", "password", "name", "role"]
+    },
+    "Log": {
+      "title": "Log",
+      "description": "An internship daily log entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique ID of the log" },
+        "student_id": { "type": "string", "description": "The ID of the student who created the log" },
+        "student_name": { "type": "string", "description": "The name of the student" },
+        "date": { "type": "string", "format": "date", "description": "The date of the log" },
+        "department": { "type": "string", "description": "The department for this log" },
+        "tasks_performed": { "type": "string", "description": "Tasks performed during the day" },
+        "skills_learned": { "type": "string", "description": "Skills learned during the day" },
+        "problems_faced": { "type": "string", "description": "Problems faced during the day" },
+        "solutions": { "type": "string", "description": "Solutions to the problems" },
+        "hours_worked": { "type": "number", "description": "Number of hours worked" },
+        "remarks": { "type": "string", "description": "Additional remarks" },
+        "created_at": { "type": "string", "format": "date-time", "description": "When the log was created" }
+      },
+      "required": ["student_id", "date", "department", "tasks_performed", "skills_learned", "hours_worked"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "The users collection"
+    },
+    "/logs/{logId}": {
+      "schema": "Log",
+      "description": "The logs collection"
+    }
+  }
+}

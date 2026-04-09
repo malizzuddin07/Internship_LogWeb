@@ -1,11 +1,52 @@
-<div align="center">
+# InternLog - Internship Management System
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+A professional full-stack platform for students to log daily internship activities and for admins to manage, analyze, and export logs to Excel.
 
-  <h1>Built with AI Studio</h2>
+## 🚀 Features
+- **Student Portal**: Log daily tasks, skills learned, and problems faced.
+- **Admin Dashboard**: Manage student accounts, view all logs, and see real-time analytics.
+- **Excel Export**: Generate professional internship reports with one click.
+- **Cloud Database**: Powered by Firebase Firestore for real-time data persistence.
+- **Secure Auth**: JWT-based authentication with encrypted passwords.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## 🛠️ Tech Stack
+- **Frontend**: React 19, Vite, Tailwind CSS, Framer Motion, Recharts.
+- **Backend**: Node.js, Express.
+- **Database**: Firebase Firestore.
+- **Icons**: Lucide React.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## 💻 Local Development
 
-</div>
+1. **Clone the repository**:
+   ```bash
+   git clone <your-github-repo-url>
+   cd internlog
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Firebase Setup**:
+   Ensure you have a `firebase-applet-config.json` file in the root directory with your Firebase credentials.
+
+4. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+   The app will be available at `http://localhost:3000`.
+
+## 🌐 Deployment
+
+### Cloud Run (Recommended)
+This app is designed to run in a container. You can deploy it directly to Google Cloud Run using the AI Studio "Deploy" button or via the Google Cloud CLI.
+
+### Vercel / Render
+1. Connect your GitHub repository.
+2. Set the **Build Command** to `npm run build`.
+3. Set the **Start Command** to `node server.ts`.
+4. Add your Firebase configuration as environment variables.
+
+## 📄 License
+MIT

@@ -1,0 +1,105 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId
+    // Fields:
+    //   - email: string (required, format: email)
+    //   - password: string (required, hashed)
+    //   - name: string (required, size: 1-100)
+    //   - role: string (required, enum: ['admin', 'student'])
+    //   - department: string (optional, size: 0-100)
+    //   - created_at: timestamp (required)
+    //
+    // Collection: logs
+    // Document ID: logId
+    // Fields:
+    //   - student_id: string (required, matches users/userId)
+    //   - student_name: string (required, size: 1-100)
+    //   - date: string (required, format: YYYY-MM-DD)
+    //   - department: string (required, size: 1-100)
+    //   - tasks_performed: string (required, size: 1-5000)
+    //   - skills_learned: string (required, size: 1-5000)
+    //   - problems_faced: string (optional, size: 0-5000)
+    //   - solutions: string (optional, size: 0-5000)
+    //   - hours_worked: number (required, range: 0-24)
+    //   - remarks: string (optional, size: 0-1000)
+    //   - created_at: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "akmal.izzuddin07@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}$");
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['email', 'password', 'name', 'role', 'created_at']) &&
+               data.email is string && isValidEmail(data.email) &&
+               data.password is string &&
+               data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+               data.role in ['admin', 'student'] &&
+               (!('department' in data) || (data.department is string && data.department.size() <= 100)) &&
+               data.created_at is timestamp;
+      }
+
+      allow read: if true; 
+      allow create: if isValidUser(request.resource.data);
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /logs/{logId} {
+      function isValidLog(data) {
+        return data.keys().hasAll(['student_id', 'student_name', 'date', 'department', 'tasks_performed', 'skills_learned', 'hours_worked', 'created_at']) &&
+               data.student_id is string &&
+               data.student_name is string && data.student_name.size() >= 1 && data.student_name.size() <= 100 &&
+               isValidDateString(data.date) &&
+               data.department is string && data.department.size() >= 1 && data.department.size() <= 100 &&
+               data.tasks_performed is string && data.tasks_performed.size() >= 1 && data.tasks_performed.size() <= 5000 &&
+               data.skills_learned is string && data.skills_learned.size() >= 1 && data.skills_learned.size() <= 5000 &&
+               (!('problems_faced' in data) || (data.problems_faced is string && data.problems_faced.size() <= 5000)) &&
+               (!('solutions' in data) || (data.solutions is string && data.solutions.size() <= 5000)) &&
+               data.hours_worked is number && data.hours_worked >= 0 && data.hours_worked <= 24 &&
+               (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 1000)) &&
+               data.created_at is timestamp;
+      }
+
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.student_id || isAdmin());
+      allow create: if isAuthenticated() && isValidLog(request.resource.data) && (request.auth.uid == request.resource.data.student_id || isAdmin());
+      allow update: if isAuthenticated() && isValidLog(request.resource.data) && (request.auth.uid == resource.data.student_id || isAdmin());
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.student_id || isAdmin());
+    }
+  }
+}
