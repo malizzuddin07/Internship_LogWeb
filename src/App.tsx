@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Toaster, toast } from 'sonner';
-import { LogIn, LogOut, LayoutDashboard, FileText, Users, Settings, Plus, Download, Trash2, Edit2, Key, ChevronRight, Menu, X } from 'lucide-react';
+import { LogIn, LogOut, LayoutDashboard, FileText, Users, Settings, Plus, Download, Trash2, Edit2, Key, ChevronRight, Menu, X, Eye, Clock, Calendar, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -515,6 +515,7 @@ const LogsPage = ({ role, userId }: { role: UserRole, userId: string }) => {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [selectedLog, setSelectedLog] = useState<Log | null>(null);
 
   const fetchLogs = async () => {
     try {
@@ -532,6 +533,12 @@ const LogsPage = ({ role, userId }: { role: UserRole, userId: string }) => {
   };
 
   useEffect(() => { fetchLogs(); }, []);
+
+  const filteredLogs = logs.filter(log => {
+    if (dateRange.start && log.date < dateRange.start) return false;
+    if (dateRange.end && log.date > dateRange.end) return false;
+    return true;
+  });
 
   const handleExport = async () => {
     setExporting(true);
@@ -551,7 +558,7 @@ const LogsPage = ({ role, userId }: { role: UserRole, userId: string }) => {
         { header: 'Remarks', key: 'remarks', width: 30 },
       ];
 
-      logs.forEach(log => worksheet.addRow(log));
+      filteredLogs.forEach(log => worksheet.addRow(log));
 
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -597,22 +604,33 @@ const LogsPage = ({ role, userId }: { role: UserRole, userId: string }) => {
                 <TableHead>Tasks Performed</TableHead>
                 <TableHead>Skills Learned</TableHead>
                 <TableHead className="w-[80px]">Hours</TableHead>
+                <TableHead className="w-[80px] text-right">View</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {logs.map((log) => (
-                <TableRow key={log.id}>
+              {filteredLogs.map((log) => (
+                <TableRow key={log.id} className="cursor-pointer hover:bg-slate-50" onClick={() => setSelectedLog(log)}>
                   <TableCell className="font-medium">{log.date}</TableCell>
                   {role === 'admin' && <TableCell>{log.student_name}</TableCell>}
                   <TableCell>{log.department}</TableCell>
                   <TableCell className="max-w-xs truncate">{log.tasks_performed}</TableCell>
                   <TableCell className="max-w-xs truncate">{log.skills_learned}</TableCell>
                   <TableCell>{log.hours_worked}h</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => { e.stopPropagation(); setSelectedLog(log); }}
+                      aria-label="View log details"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
-              {logs.length === 0 && !loading && (
+              {filteredLogs.length === 0 && !loading && (
                 <TableRow>
-                  <TableCell colSpan={role === 'admin' ? 6 : 5} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={role === 'admin' ? 7 : 6} className="text-center py-10 text-muted-foreground">
                     No logs found.
                   </TableCell>
                 </TableRow>
@@ -621,6 +639,59 @@ const LogsPage = ({ role, userId }: { role: UserRole, userId: string }) => {
           </Table>
         </ScrollArea>
       </Card>
+
+      <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Log Details</DialogTitle>
+          </DialogHeader>
+          {selectedLog && (
+            <div className="space-y-5 pt-2">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary" className="gap-1.5">
+                  <Calendar className="h-3 w-3" /> {selectedLog.date}
+                </Badge>
+                <Badge variant="secondary" className="gap-1.5">
+                  <Building2 className="h-3 w-3" /> {selectedLog.department}
+                </Badge>
+                <Badge variant="secondary" className="gap-1.5">
+                  <Clock className="h-3 w-3" /> {selectedLog.hours_worked}h
+                </Badge>
+                {role === 'admin' && selectedLog.student_name && (
+                  <Badge variant="secondary" className="gap-1.5">
+                    <Users className="h-3 w-3" /> {selectedLog.student_name}
+                  </Badge>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold text-slate-700">Tasks Performed</h4>
+                <p className="text-sm text-slate-600 whitespace-pre-wrap">{selectedLog.tasks_performed || '-'}</p>
+              </div>
+
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold text-slate-700">Skills Learned</h4>
+                <p className="text-sm text-slate-600 whitespace-pre-wrap">{selectedLog.skills_learned || '-'}</p>
+              </div>
+
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold text-slate-700">Problems Faced</h4>
+                <p className="text-sm text-slate-600 whitespace-pre-wrap">{selectedLog.problems_faced || '-'}</p>
+              </div>
+
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold text-slate-700">Solutions</h4>
+                <p className="text-sm text-slate-600 whitespace-pre-wrap">{selectedLog.solutions || '-'}</p>
+              </div>
+
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold text-slate-700">Remarks</h4>
+                <p className="text-sm text-slate-600 whitespace-pre-wrap">{selectedLog.remarks || '-'}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
